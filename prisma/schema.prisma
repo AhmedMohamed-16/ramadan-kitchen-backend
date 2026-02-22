@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DISTRIBUTOR
+  ACCOUNTANT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  OTHER
+}
+
+// NeedLevel REMOVED intentionally - replaced by MealType logic
+
+enum ExpenseCategory {
+  FOOD
+  TRANSPORT
+  UTILITIES
+  SUPPLIES
+  MAINTENANCE
+  OTHER
+}
+
+enum MealType {
+  KITCHEN
+  HOME
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  donors        Donor[]
+  beneficiaries Beneficiary[]
+
+  @@map("locations")
+}
+
+model Donor {
+  id         String   @id @default(uuid())
+  fullName   String
+  phone      String
+  locationId String
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  location  Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  donations Donation[]
+
+  @@index([phone])
+  @@index([locationId])
+  @@map("donors")
+}
+
+model Donation {
+  id            String         @id @default(uuid())
+  donorId       String
+  amount        Decimal        @db.Decimal(10, 2)
+  date          DateTime       @db.Date
+  paymentMethod PaymentMethod?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  donor Donor @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([donorId])
+  @@map("donations")
+}
+
+model Beneficiary {
+  id               String    @id @default(uuid())
+  fullName         String
+  nickName         String?   // اسم الشهرة - اختياري
+  phone            String
+  numberOfChildren Int       @default(0)
+  mealType         MealType  @default(KITCHEN)
+  maxMealsPerDay   Int       @default(1)
+  locationId       String
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  location                Location                   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  eligibilityDays         BeneficiaryEligibilityDay[]
+  distributionAllocations DistributionAllocation[]
+  extraDistributions      ExtraDistribution[]
+
+  @@index([phone])
+  @@index([fullName])
+  @@index([locationId])
+  @@index([isActive])
+  @@index([mealType])
+  @@map("beneficiaries")
+}
+
+model BeneficiaryEligibilityDay {
+  id            String   @id @default(uuid())
+  beneficiaryId String
+  dayOfWeek     Int      // 0 = Sunday, 6 = Saturday
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  beneficiary Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+
+  @@unique([beneficiaryId, dayOfWeek])
+  @@index([dayOfWeek])
+  @@map("beneficiary_eligibility_days")
+}
+
+model DistributionDay {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  allocations DistributionAllocation[]
+
+  @@unique([date])
+  @@index([date])
+  @@map("distribution_days")
+}
+
+model DistributionAllocation {
+  id                String   @id @default(uuid())
+  distributionDayId String
+  beneficiaryId     String
+  received          Boolean  @default(false)
+  mealsDelivered    Int      @default(0)
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  distributionDay DistributionDay @relation(fields: [distributionDayId], references: [id], onDelete: Cascade)
+  beneficiary     Beneficiary     @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+
+  @@unique([distributionDayId, beneficiaryId])
+  @@index([distributionDayId])
+  @@index([beneficiaryId])
+  @@index([received])
+  @@map("distribution_allocations")
+}
+
+model ExtraDistribution {
+  id            String   @id @default(uuid())
+  beneficiaryId String?
+  fullName      String   // For non-registered beneficiaries
+  phone         String?
+  mealsGiven    Int
+  date          DateTime @db.Date
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  beneficiary Beneficiary? @relation(fields: [beneficiaryId], references: [id], onDelete: SetNull)
+
+  @@index([date])
+  @@index([beneficiaryId])
+  @@map("extra_distributions")
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  amount      Decimal         @db.Decimal(10, 2)
+  category    ExpenseCategory
+  date        DateTime        @db.Date
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
+}

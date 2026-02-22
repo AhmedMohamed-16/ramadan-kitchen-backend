@@ -1,0 +1,23 @@
+node_modules/
+
+# Environment
+.env
+
+# Build
+dist/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.ARCHITECTURE_RULES.md
+.DEVELOPMENT_ORDER.md
+
+# Prisma
+prisma/migrations/**/migration.sql
