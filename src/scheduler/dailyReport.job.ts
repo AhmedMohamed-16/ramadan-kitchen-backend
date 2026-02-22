@@ -37,7 +37,7 @@ export const runDailyReportJob = async () => {
           <ul>
             <li>إجمالي التبرعات: ${reportData.financial.totalDonations}</li>
             <li>إجمالي المصروفات: ${reportData.financial.totalExpenses}</li>
-            <li>إجمالي الوجبات الموزعة: ${reportData.distribution.totalMealsServed}</li>
+            <li>إجمالي الوجبات الموزعة: ${reportData.grandTotal.totalMealsServed}</li>
           </ul>
           <p>نسأل الله أن يتقبل من الجميع 🤲</p>
         </body>
