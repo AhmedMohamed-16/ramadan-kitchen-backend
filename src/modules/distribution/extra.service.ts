@@ -1,7 +1,6 @@
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/middleware/error.middleware';
 import { isValidDateFormat } from '../../shared/utils/dateHelpers';
-import { NeedLevel } from '@prisma/client';
 
 interface CreateExtraDistributionInput {
   beneficiaryId: string;
@@ -13,7 +12,6 @@ interface CreateBeneficiaryData {
   fullName: string;
   phone: string;
   numberOfChildren?: number;
-  needLevel?: NeedLevel;
   maxMealsPerDay?: number;
   locationId: string;
 }
